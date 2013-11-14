@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" android:layout_gravity="center|left">
+
+    <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/lorem"
+            android:id="@+id/subject"
+            android:maxLines="1" android:layout_alignParentLeft="true" android:layout_alignParentTop="true"
+            android:ellipsize="end"/>
+
+    <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/lorem"
+            android:id="@+id/from"
+            android:maxLines="1"
+            android:layout_alignParentLeft="true" android:layout_below="@+id/subject" android:ellipsize="end"/>
+</RelativeLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mailinator</string>
+    <string name="hello">Hello, Mailinator!</string>
+    <string name="subject">Subject:\t</string>
+    <string name="to">to: </string>
+    <string name="from">from: </string>
+    <string name="lorem">Lorem ipsum</string>
+</resources>
