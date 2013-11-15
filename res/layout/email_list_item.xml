@@ -14,10 +14,18 @@
             android:ellipsize="end"/>
 
     <TextView
-            android:layout_width="fill_parent"
+            android:layout_width="125dp"
             android:layout_height="wrap_content"
             android:text="@string/lorem"
             android:id="@+id/from"
             android:maxLines="1"
-            android:layout_alignParentLeft="true" android:layout_below="@+id/subject" android:ellipsize="end"/>
+            android:layout_alignParentLeft="true" android:layout_below="@+id/subject" android:ellipsize="middle"
+            android:singleLine="true"/>
+    <TextView
+            android:layout_width="73dp"
+            android:layout_height="wrap_content"
+            android:text="@string/lorem"
+            android:id="@+id/to" android:layout_alignParentLeft="true"
+            android:layout_alignTop="@+id/from" android:layout_alignParentRight="true" android:ellipsize="end"
+            android:layout_marginLeft="167dp" android:singleLine="true"/>
 </RelativeLayout>

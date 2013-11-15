@@ -12,9 +12,10 @@ import java.util.Vector;
 
 public class URLReaderTask extends AsyncTask<URL, Integer, Long> {
     private List<String> strings = new Vector<String>();
+
     private TaskProgressListener<List<String>, Integer> listener;
 
-    public URLReaderTask(TaskProgressListener<List<String>, Integer> listener) {
+    public void setListener(TaskProgressListener<List<String>, Integer> listener) {
         this.listener = listener;
     }
 
@@ -26,7 +27,6 @@ public class URLReaderTask extends AsyncTask<URL, Integer, Long> {
     protected Long doInBackground(URL... urls) {
         int i = 0;
         for (; i < urls.length; i++) {
-            publishProgress(i);
             URL url = urls[i];
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -36,6 +36,7 @@ public class URLReaderTask extends AsyncTask<URL, Integer, Long> {
                     buffer.append(line);
                 }
                 strings.add(buffer.toString());
+                publishProgress(i);
             } catch (IOException e) {
                 e.printStackTrace();
                 return 1L;

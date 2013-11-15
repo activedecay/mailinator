@@ -32,7 +32,9 @@ public class MailinatorMain extends Activity {
     public static final String SECONDS_AGO_KEY = "seconds_ago";
     public static final String TIME_KEY = "time";
     public static final String FROM_KEY = "from";
-    private String[] mailboxUsername = {"derp","whatever","herp","win","god"};
+    private String[] mailboxUsername = {"high","hi","god","mail","mailinator","devil","satan","mary"};
+    private List<Map<String,String>> emails = new ArrayList<Map<String, String>>();
+    private SimpleAdapter adapter;
 
     /** Called when the activity is first created. */
     @Override
@@ -40,8 +42,28 @@ public class MailinatorMain extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        adapter = new SimpleAdapter(
+                MailinatorMain.this, emails, R.layout.email_list_item,
+                new String[]{SUBJECT_KEY, FROMFULL_KEY, TO_KEY},
+                new int[]{R.id.subject, R.id.from, R.id.to});
+
+        ListView emailListView = (ListView) findViewById(R.id.listView);
+        emailListView.setAdapter(adapter);
+        emailListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, final View view,
+                                    int position, long id) {
+                Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
+                Intent intent = new Intent(getApplicationContext(), EmailActivity.class);
+                intent.putExtra("email_subject", email.get(SUBJECT_KEY));
+                intent.putExtra("email_id", email.get(ID_KEY));
+                startActivity(intent);
+            }
+        });
+
         List<URL> unsetUrls = createUnsetInboxURLList();
-        new URLReaderTask(new TaskProgressListener<List<String>, Integer>() {
+        URLReaderTask urlReaderTask = new URLReaderTask();
+        urlReaderTask.setListener(new TaskProgressListener<List<String>, Integer>() {
             @Override
             public void onPostExecute(List<String> inboxUnsetJson) {
                 onInboxesUnset(inboxUnsetJson);
@@ -51,7 +73,8 @@ public class MailinatorMain extends Activity {
             public void onProgressUpdate(Integer... values) {
                 setProgress("unsetting " + mailboxUsername[values[0]]);
             }
-        }).execute(unsetUrls.toArray(new URL[unsetUrls.size()]));
+        });
+        urlReaderTask.execute(unsetUrls.toArray(new URL[unsetUrls.size()]));
     }
 
     private List<URL> createUnsetInboxURLList() {
@@ -78,66 +101,59 @@ public class MailinatorMain extends Activity {
                 e.printStackTrace();
             }
         }
-        new URLReaderTask(new TaskProgressListener<List<String>, Integer>() {
+        TaskProgressListener<List<String>, Integer> listener;
+        final URLReaderTask urlReaderTask = new URLReaderTask();
+
+        listener = new TaskProgressListener<List<String>, Integer>() {
             @Override
             public void onPostExecute(List<String> strings) {
-                List<Map<String, String>> emails = collectEmailSummaries(strings);
-                ListView emailListView = (ListView) findViewById(R.id.listView);
-                SimpleAdapter adapter = new SimpleAdapter(
-                        MailinatorMain.this, emails, R.layout.email_list_item,
-                        new String[]{SUBJECT_KEY, FROMFULL_KEY},
-                        new int[]{R.id.subject, R.id.from});
-                emailListView.setAdapter(adapter);
-                adapter.notifyDataSetChanged();
-                emailListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, final View view,
-                                            int position, long id) {
-                        Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
-                        Intent intent = new Intent(getApplicationContext(), EmailActivity.class);
-                        intent.putExtra("email_subject", email.get(SUBJECT_KEY));
-                        intent.putExtra("email_id", email.get(ID_KEY));
-                        startActivity(intent);
-                    }
-                });
+                setProgress("");
             }
 
             @Override
             public void onProgressUpdate(Integer... values) {
                 setProgress("reading inbox " + mailboxUsername[values[0]]);
-                //TOtO
+                List<String> strings = urlReaderTask.getStrings();
+                String mailboxJson = strings.get(strings.size() - 1);
+                collectEmailSummary(mailboxJson);
+                adapter.notifyDataSetChanged();
             }
-        }).execute(inboxUrls.toArray(new URL[inboxUrls.size()]));
+        };
+
+        urlReaderTask.setListener(listener);
+        urlReaderTask.execute(inboxUrls.toArray(new URL[inboxUrls.size()]));
     }
 
-    private List<Map<String, String>> collectEmailSummaries(List<String> strings) {
-        List<Map<String, String>> emails = new LinkedList<Map<String, String>>();
+    private void collectEmailSummaries(List<String> strings) {
         for (String json : strings) {
-            JSONArray jsonArray = getJsonArray(json, MAILDIR_KEY);
+            collectEmailSummary(json);
+        }
+    }
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject o = jsonArray.optJSONObject(i);
-                if (o.length() != 0) {
-                    Map<String, String> email = new HashMap<String, String>();
-                    if (!o.has(FROMFULL_KEY)) continue;
+    private void collectEmailSummary(String json) {
+        JSONArray jsonArray = getJsonArray(json, MAILDIR_KEY);
 
-                    collectStringData(o, email, FROMFULL_KEY);
-                    collectStringData(o, email, TO_KEY);
-                    collectStringData(o, email, SUBJECT_KEY);
-                    collectStringData(o, email, SNIPPET_KEY);
-                    collectStringData(o, email, FROM_KEY);
-                    collectStringData(o, email, ID_KEY);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject o = jsonArray.optJSONObject(i);
+            if (o.length() != 0) {
+                Map<String, String> email = new HashMap<String, String>();
+                if (!o.has(FROMFULL_KEY)) continue;
 
-                    collectBooleanData(o, email, BEEN_READ_KEY);
+                collectStringData(o, email, FROMFULL_KEY);
+                collectStringData(o, email, TO_KEY);
+                collectStringData(o, email, SUBJECT_KEY);
+                collectStringData(o, email, SNIPPET_KEY);
+                collectStringData(o, email, FROM_KEY);
+                collectStringData(o, email, ID_KEY);
 
-                    collectLongData(o, email, SECONDS_AGO_KEY);
-                    collectLongData(o, email, TIME_KEY);
+                collectBooleanData(o, email, BEEN_READ_KEY);
 
-                    emails.add(email);
-                }
+                collectLongData(o, email, SECONDS_AGO_KEY);
+                collectLongData(o, email, TIME_KEY);
+
+                emails.add(email);
             }
         }
-        return emails;
     }
 
     private JSONArray getJsonArray(String json, String key) {
@@ -218,7 +234,7 @@ public class MailinatorMain extends Activity {
         email.put(key, from.toString());
     }
 
-    private long now() {
+    public static long now() {
         return System.currentTimeMillis();
     }
 
