@@ -2,18 +2,14 @@ package com.example.mailinator;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.MediaMuxer;
 import android.os.Bundle;
 import android.text.Html;
-import android.util.Xml;
 import android.widget.TextView;
 import com.example.mailinator.util.TaskProgressListener;
 import com.example.mailinator.util.URLReaderTask;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -25,13 +21,16 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.*;
-import java.io.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.io.StringBufferInputStream;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class EmailActivity extends Activity {
