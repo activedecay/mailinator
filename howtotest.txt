@@ -1,0 +1,76 @@
+Android does not provide a separate test case class for BroadcastReceiver.
+ Instead, test a BroadcastReceiver by testing the component that sends it
+ Intent objects, to verify that the BroadcastReceiver responds correctly.
+
+You use the ApplicationTestCase test case class to test the setup and teardown of Application objects.
+ These objects maintain the global state of information that applies to all the components in an application package.
+ The test case can be useful in verifying that the <application> element in the manifest file is correctly set up.
+ Note, however, that this test case does not allow you to control testing of the components within your application package.
+
+If you want to use instrumentation methods in a test case class, you must
+ use InstrumentationTestCase or one of its subclasses. The Activity test cases
+ extend this base class with other functionality that assists in Activity testing.
+
+Besides the JUnit Assert class methods, the testing API also provides the MoreAsserts and ViewAsserts classes:
+ MoreAsserts contains more powerful assertions such as assertContainsRegex(String, String)
+ ViewAsserts contains useful assertions about Views.
+  For example it contains assertHasScreenCoordinates(View, View, int, int)
+  that tests if a View has a particular X and Y position on the visible screen.
+  These asserts simplify testing of geometry and alignment in the UI.
+
+Mock object classes
+
+To facilitate dependency injection in testing, Android provides classes that
+ create mock system objects such as Context objects, ContentProvider objects,
+ ContentResolver objects, and Service objects. Some test cases also provide mock
+ Intent objects. You use these mocks both to isolate tests from the rest of the
+ system and to facilitate dependency injection for testing. These classes are
+ found in the packages android.test and android.test.mock.
+
+ Mocking... Stubbing out or overriding normal operations.
+
+ For example, a MockContentResolver replaces the normal resolver framework with
+ its own local framework, which is isolated from the rest of the system.
+ MockContentResolver also stubs out the notifyChange(Uri, ContentObserver, boolean)
+ method so that observer objects outside the test environment are not accidentally triggered.
+
+ Mocking...facilitate dependency injection by providing a subclass of the normal
+ object that is non-functional except for overrides you define.
+
+ For example, the MockResources object provides a subclass of Resources in which
+ all the methods throw Exceptions when called. To use it, you override only those
+ methods that must provide information.
+
+    MockApplication, MockContext, MockContentProvider, MockCursor, MockDialogInterface,
+    MockPackageManager, and MockResources provide a simple and useful mock strategy.
+
+MockContentResolver provides isolated testing of content providers by masking
+out the normal system resolver framework. Instead of looking in the system to
+find a content provider given an authority string, MockContentResolver uses its
+own internal table. You must explicitly add providers to this table using addProvider(String, ContentProvider).
+
+With this feature, you can associate a mock content provider with an authority.
+You can create an instance of a real provider but use test data in it. You can
+even set the provider for an authority to null. In effect, a MockContentResolver
+object isolates your test from providers that contain real data. You can control
+the function of the provider, and you can prevent your test from affecting real data.
+
+Contexts for testing
+
+Android provides two Context classes that are useful for testing:
+
+    1. IsolatedContext provides an isolated Context, File, directory, and database
+    operations that use this Context take place in a test area. Though its functionality
+    is limited, this Context has enough stub code to respond to system calls.
+
+    This class allows you to test an application's data operations without affecting
+    real data that may be present on the device.
+
+    2. RenamingDelegatingContext provides a Context in which most functions are handled
+    by an existing Context, but file and database operations are handled by a IsolatedContext.
+    The isolated part uses a test directory and creates special file and directory names.
+    You can control the naming yourself, or let the constructor determine it automatically.
+
+    This object provides a quick way to set up an isolated area for data operations, while
+    keeping normal functionality for all other Context operations.
+

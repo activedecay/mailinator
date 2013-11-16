@@ -35,7 +35,7 @@ public class MailinatorMain extends Activity {
     public static final String SECONDS_AGO_KEY = "seconds_ago";
     public static final String TIME_KEY = "time";
     public static final String FROM_KEY = "from";
-    private String[] mailboxUsername = {"high","hi","god","mail","mailinator","devil","satan","mary"};
+    private String[] mailboxUsername = {"mailinator"};
     private List<Map<String,String>> emails = new ArrayList<Map<String, String>>();
     private SimpleAdapter adapter;
 
