@@ -1,6 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="debug" type="id">debugConsole</item>
-    <item name="list" type="id">listOfMail</item>
-    <item name="listView" type="id">emailList</item>
 </resources>

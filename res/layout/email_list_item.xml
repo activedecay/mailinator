@@ -11,22 +11,23 @@
             android:text="@string/lorem"
             android:id="@+id/subject"
             android:maxLines="1" android:layout_alignParentLeft="true" android:layout_alignParentTop="true"
-            android:ellipsize="end" style="@style/email_subject"/>
+            android:ellipsize="end" style="@style/email_subject" android:singleLine="true"/>
 
     <TextView
-            android:layout_width="160dp"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/lorem"
             android:id="@+id/from"
             android:maxLines="1"
             android:layout_alignParentLeft="true" android:layout_below="@+id/subject" android:ellipsize="middle"
-            android:singleLine="true"/>
+            android:singleLine="true" style="@style/email_tofrom"/>
     <TextView
-            android:layout_width="73dp"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/lorem"
-            android:id="@+id/to" android:layout_alignParentLeft="true"
-            android:layout_alignTop="@+id/from" android:layout_alignParentRight="true" android:ellipsize="end"
-            android:layout_marginLeft="167dp" android:singleLine="true" android:autoText="false"
-            android:gravity="right"/>
+            android:id="@+id/to"
+            android:ellipsize="end"
+            android:singleLine="true" android:autoText="false"
+            android:layout_below="@+id/from" style="@style/email_tofrom"
+            />
 </RelativeLayout>

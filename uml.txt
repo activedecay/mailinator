@@ -1,0 +1,40 @@
+            +----------+   +---------------+
+            | overview |   | notifications |
+            +----+-----+   +----------+----+
+                 |                    |
+         +-------X---+----------------|---------+
+         |           |                |         |
+         |           |                |         |
+         |           |                |         |
+  +- ----v------+  +-v-------------+  |   +-----v-----+
+  |   mailboxes |  |   saved       |  |   | settings  |
+  | L=user_item |  | L=message_item|  |   |           |
+  +------+------+  +------+--------+  |   +-----------+
+         |                |           |
+   +-----v--------+       |           |
+   |  inbox       |+      |      ++++++++++++
+   |L=message_item|<-------------+ optional +
+   +--------------+|      |      ++++++++++++
+    +----+---------+      |           |
+         |              +-v-----------v--+
+         +-------------->  message_view  |
+                        |T=title         |
+                        |T=message_body  |
+                        |A=save/delete   |
+                        +----------------+
+
+
+                                x
+          x                     xx
+         xx                      xx
+        xx                        xx
+       xx          x               xx
+     xxx           x                xx
+    xx            xx                 xxx
+   xx   x         xx            x     xxx
+   x  x.x        xxx           x.x     xx
+  xx   x         xxxx          x      xxx
+ xxx            xxxxxx                xx
+ xxxxx        xx   xxxx             xxx
+  xxxxxxxxxxxxx      xxxxx       xxxxx
+    xxxxxxxxx            xxxxxxxx

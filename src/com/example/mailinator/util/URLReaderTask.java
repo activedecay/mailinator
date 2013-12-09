@@ -1,17 +1,24 @@
 package com.example.mailinator.util;
 
 import android.os.AsyncTask;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
-public class URLReaderTask extends AsyncTask<URL, Integer, Long> {
+public class URLReaderTask extends AsyncTask<String, Integer, Long> {
     private List<String> strings = new Vector<String>();
+    private DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
 
     private TaskProgressListener<List<String>, Integer> listener;
 
@@ -24,12 +31,15 @@ public class URLReaderTask extends AsyncTask<URL, Integer, Long> {
     }
 
     @Override
-    protected Long doInBackground(URL... urls) {
+    protected Long doInBackground(String... urls) {
         int i = 0;
         for (; i < urls.length; i++) {
-            URL url = urls[i];
+            String url = urls[i];
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+                HttpResponse httpResponse = defaultHttpClient.execute(new HttpGet(url));
+                HttpEntity entity = httpResponse.getEntity();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent()));
                 String line;
                 StringBuilder buffer = new StringBuilder();
                 while ((line = reader.readLine()) != null) {
