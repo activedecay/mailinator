@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmailActivity extends Activity {
-    public static final String RENDER_JSP_URI = MailinatorMain.MAILINATOR_COM_URL + "/rendermail.jsp";
-    public static final String MSGID_PARAM = "?msgid=";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,10 +31,9 @@ public class EmailActivity extends Activity {
 
         textLabel.setText(emailSubject);
 
-        //http://www.mailinator.com/rendermail.jsp?msgid=1384477718-45432902-mail&time=1384477728583
-
         List<String> messageUrl = new ArrayList<String>();
-        messageUrl.add(new String(RENDER_JSP_URI + MSGID_PARAM + emailId + MailinatorMain.TIME_PARAM + TimeUtil.now()));
+        messageUrl.add(MailinatorUrl.RENDER_JSP_URI + MailinatorUrl.MSGID_PARAM + emailId +
+                MailinatorUrl.TIME_PARAM + TimeUtil.now());
         URLReaderTask urlReaderTask = new URLReaderTask();
         urlReaderTask.setListener(new TaskProgressListener<List<String>, Integer>() {
             @Override
