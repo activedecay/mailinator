@@ -6,4 +6,5 @@
     <string name="to">to: </string>
     <string name="from">from: </string>
     <string name="lorem">Lorem ipsum</string>
+    <string name="no_items">No email</string>
 </resources>

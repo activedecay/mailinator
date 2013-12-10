@@ -47,8 +47,7 @@ public class MailinatorMain extends FragmentActivity {
 
         InboxPagerAdapter inboxPagerAdapter = new InboxPagerAdapter(getSupportFragmentManager());
 
-        ViewPager mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setAdapter(inboxPagerAdapter);
+        ((ViewPager) findViewById(R.id.pager)).setAdapter(inboxPagerAdapter);
     }
 
     public static class InboxPagerAdapter extends FragmentPagerAdapter {
@@ -58,17 +57,7 @@ public class MailinatorMain extends FragmentActivity {
 
         @Override
         public Fragment getItem(int i) {
-            Fragment fragment = new InboxFragment();
-            Bundle args = new Bundle();
-            String value;
-            try {
-                value = userNames.get(i);
-            } catch (Exception ignored) {
-                return null;
-            }
-            args.putString(InboxFragment.USERNAME, value);
-            fragment.setArguments(args);
-            return fragment;
+            return new InboxFragment(i);
         }
 
         @Override
@@ -83,16 +72,31 @@ public class MailinatorMain extends FragmentActivity {
         }
     }
 
-    public static class InboxFragment extends Fragment {
+    public static class InboxFragment extends ListFragment {
         public static final String USERNAME = "username";
-        private SimpleAdapter emailMessageAdapter;
-        private Bundle args;
+
         private ArrayList<Map<String,String>> emailList;
+//        private SimpleAdapter emailMessageAdapter;
+        private Bundle args;
+        private String username;
+        private SimpleAdapter emailAdapter;
+
+        public InboxFragment(int index) {
+            Bundle args = new Bundle();
+            args.putString(InboxFragment.USERNAME, userNames.get(index));
+            setArguments(args);
+        }
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            args = getArguments();
+        }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             args = getArguments();
-            String username = args.getString(USERNAME);
+            username = args.getString(USERNAME);
 
             List<String> useItUrls = new ArrayList<String>(
                     Arrays.asList(USE_IT_URI + username + TIME_PARAM + TimeUtil.now()));
@@ -111,11 +115,24 @@ public class MailinatorMain extends FragmentActivity {
             urlReaderTask.execute(useItUrls.toArray(new String[useItUrls.size()]));
 
             View view = inflater.inflate(R.layout.inbox, container, false);
-            emailMessageAdapter = createEmailAdapter(view);
-            ((TextView) view.findViewById(R.id.inbox_title)).setText(args.getString(USERNAME));
-            ListView emailListView = (ListView) view.findViewById(R.id.messages);
-            createEmailListView(emailMessageAdapter, emailListView);
             return view;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void onListItemClick(ListView parent, final View view, int position, long id) {
+            Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
+            Intent intent = new Intent(view.getContext(), EmailActivity.class);
+            intent.putExtra("email_subject", email.get(SUBJECT_KEY));
+            intent.putExtra("email_id", email.get(ID_KEY));
+            startActivity(intent);
+        }
+
+        @Override
+        public void onActivityCreated(Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+            emailAdapter = createEmailAdapter(getView());
+            setListAdapter(emailAdapter);
         }
 
         private SimpleAdapter createEmailAdapter(View view) {
@@ -128,11 +145,8 @@ public class MailinatorMain extends FragmentActivity {
 
         private void onInboxUseItEvent(List<String> inboxJson) {
             List<String> inboxUrls = new ArrayList<String>();
-            for (int i = 0; i < inboxJson.size(); i++) {
-                String json = inboxJson.get(i);
+            for (String json : inboxJson) {
                 String address = JsonHelper.getJsonString(json, ADDRESS_KEY);
-                String username = userNames.get(i);
-
                 inboxUrls.add(GRAB_URI + username + ADDRESS_PARAM + address + TIME_PARAM + TimeUtil.now());
             }
             TaskProgressListener<List<String>, Integer> listener;
@@ -148,7 +162,7 @@ public class MailinatorMain extends FragmentActivity {
                     List<String> mailboxes = inboxesRead.getStrings();
                     String mailboxJson = mailboxes.get(mailboxes.size() - 1);
                     collectEmailSummary(mailboxJson);
-                    emailMessageAdapter.notifyDataSetChanged();
+                    emailAdapter.notifyDataSetChanged();
                 }
             };
 
@@ -195,22 +209,6 @@ public class MailinatorMain extends FragmentActivity {
         private void collectLongData(JSONObject o, Map<String, String> email, String key) {
             Long from = JsonHelper.getJsonLong(o, key);
             email.put(key, from.toString());
-        }
-
-        private void createEmailListView(ListAdapter adapter, ListView emailListView) {
-            emailListView.setAdapter(adapter);
-
-            emailListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                @SuppressWarnings("unchecked")
-                public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
-                    Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
-                    Intent intent = new Intent(view.getContext(), EmailActivity.class);
-                    intent.putExtra("email_subject", email.get(SUBJECT_KEY));
-                    intent.putExtra("email_id", email.get(ID_KEY));
-                    startActivity(intent);
-                }
-            });
         }
     }
 }
