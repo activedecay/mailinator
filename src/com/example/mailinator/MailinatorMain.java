@@ -1,8 +1,9 @@
 package com.example.mailinator;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.*;
+import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,11 +14,10 @@ import com.example.mailinator.util.TimeUtil;
 import com.example.mailinator.util.URLReaderTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import android.support.v4.app.Fragment;
 
 import java.util.*;
 
-public class MailinatorMain extends Activity {
+public class MailinatorMain extends FragmentActivity {
     public static final String MAILINATOR_COM_URL = "http://www.mailinator.com";
     public static final String USE_IT_URI = MAILINATOR_COM_URL + "/useit?box=";
     public static final String GRAB_URI = MAILINATOR_COM_URL + "/grab?inbox=";
@@ -37,11 +37,7 @@ public class MailinatorMain extends Activity {
     public static final String ADDRESS_PARAM = "&address=";
     public static final String TIME_PARAM = "&time=";
 
-    private List<String> usernames = Arrays.asList("0x1337b33f", "mailinator", "jfaust", "god");
-
-    private Map<String, List<Map<String, String>>> messages = new TreeMap<String, List<Map<String, String>>>();
-
-    private Map<String, SimpleAdapter> adapters = new TreeMap<String, SimpleAdapter>();
+    private static List<String> userNames = Arrays.asList("0x1337b33f", "mailinator", "jfaust", "god");
 
     /** Called when the activity is first created. */
     @Override
@@ -49,161 +45,172 @@ public class MailinatorMain extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        InboxPagerAdapter inboxPagerAdapter = new InboxPagerAdapter(getSupportFragmentManager());
 
-        List<String> useItUrls = createUseItInboxURLList();
-        URLReaderTask urlReaderTask = new URLReaderTask();
-        urlReaderTask.setListener(new TaskProgressListener<List<String>, Integer>() {
-            @Override
-            public void onPostExecute(List<String> inboxUseItJson) {
-                onInboxesUseItEvent(inboxUseItJson);
-            }
-
-            @Override
-            public void onProgressUpdate(Integer... values) {
-                setProgress("using " + usernames.get(values[0]));
-            }
-        });
-        urlReaderTask.execute(useItUrls.toArray(new String[useItUrls.size()]));
+        ViewPager mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager.setAdapter(inboxPagerAdapter);
     }
 
-    public static class DemoObjectFragment extends Fragment {
+    public static class InboxPagerAdapter extends FragmentPagerAdapter {
+        public InboxPagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
 
-        public static final String ARG_OBJECT = "object";
+        @Override
+        public Fragment getItem(int i) {
+            Fragment fragment = new InboxFragment();
+            Bundle args = new Bundle();
+            String value;
+            try {
+                value = userNames.get(i);
+            } catch (Exception ignored) {
+                return null;
+            }
+            args.putString(InboxFragment.USERNAME, value);
+            fragment.setArguments(args);
+            return fragment;
+        }
+
+        @Override
+        public int getCount() {
+            // For this contrived example, we have a 100-object collection.
+            return userNames.size();
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return userNames.get(position);
+        }
+    }
+
+    public static class InboxFragment extends Fragment {
+        public static final String USERNAME = "username";
+        private SimpleAdapter emailMessageAdapter;
+        private Bundle args;
+        private ArrayList<Map<String,String>> emailList;
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            SimpleAdapter adapter = createEmailAdapter(username);
-            ListView emailListView = createEmailListView(username, adapter);
-            View rootView = inflater.inflate(R.layout.fragment_collection_object, container, false);
-            Bundle args = getArguments();
-            ((TextView) rootView.findViewById(android.R.id.text1)).setText(
-                    Integer.toString(args.getInt(ARG_OBJECT)));
-            return rootView;
+            args = getArguments();
+            String username = args.getString(USERNAME);
+
+            List<String> useItUrls = new ArrayList<String>(
+                    Arrays.asList(USE_IT_URI + username + TIME_PARAM + TimeUtil.now()));
+            URLReaderTask urlReaderTask = new URLReaderTask();
+            urlReaderTask.setListener(new TaskProgressListener<List<String>, Integer>() {
+                @Override
+                public void onPostExecute(List<String> inboxUseItJson) {
+                    onInboxUseItEvent(inboxUseItJson);
+                }
+
+                @Override
+                public void onProgressUpdate(Integer... values) {
+                    //setProgress("using " + userNames.get(values[0]));
+                }
+            });
+            urlReaderTask.execute(useItUrls.toArray(new String[useItUrls.size()]));
+
+            View view = inflater.inflate(R.layout.inbox, container, false);
+            emailMessageAdapter = createEmailAdapter(view);
+            ((TextView) view.findViewById(R.id.inbox_title)).setText(args.getString(USERNAME));
+            ListView emailListView = (ListView) view.findViewById(R.id.messages);
+            createEmailListView(emailMessageAdapter, emailListView);
+            return view;
         }
-    }
 
-    private ListView createEmailListView(String username, ListAdapter adapter) {
-        ListView emailListView = new ListView(this);
-        emailListView.setAdapter(adapter);
-        emailListView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
-
-        emailListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void onItemClick(AdapterView<?> parent, final View view,
-                                    int position, long id) {
-                Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
-                Intent intent = new Intent(getApplicationContext(), EmailActivity.class);
-                intent.putExtra("email_subject", email.get(SUBJECT_KEY));
-                intent.putExtra("email_id", email.get(ID_KEY));
-                startActivity(intent);
-            }
-        });
-
-        TextView header = new TextView(this);
-        header.setText(username);
-        emailListView.addHeaderView(header);
-        return emailListView;
-    }
-
-    private SimpleAdapter createEmailAdapter(String username) {
-        ArrayList<Map<String, String>> emailList = new ArrayList<Map<String, String>>();
-        messages.put(username, emailList);
-        SimpleAdapter adapter = new SimpleAdapter(
-                MailinatorMain.this, emailList, R.layout.email_list_item,
-                new String[]{SUBJECT_KEY, FROMFULL_KEY, TO_KEY},
-                new int[]{R.id.subject, R.id.from, R.id.to});
-        adapters.put(username, adapter);
-        return adapter;
-    }
-
-    private List<String> createUseItInboxURLList() {
-        List<String> urls = new ArrayList<String>();
-        for (String username : usernames) {
-            urls.add(USE_IT_URI + username + TIME_PARAM + TimeUtil.now());
+        private SimpleAdapter createEmailAdapter(View view) {
+            emailList = new ArrayList<Map<String, String>>();
+            return new SimpleAdapter(
+                    view.getContext(), emailList, R.layout.email_list_item,
+                    new String[]{SUBJECT_KEY, FROMFULL_KEY, TO_KEY},
+                    new int[]{R.id.subject, R.id.from, R.id.to});
         }
-        return urls;
-    }
 
-    private void onInboxesUseItEvent(List<String> inboxesJson) {
-        List<String> inboxUrls = new ArrayList<String>();
-        for (int i = 0; i < inboxesJson.size(); i++) {
-            String json = inboxesJson.get(i);
-            String address = JsonHelper.getJsonString(json, ADDRESS_KEY);
-            String username = usernames.get(i);
+        private void onInboxUseItEvent(List<String> inboxJson) {
+            List<String> inboxUrls = new ArrayList<String>();
+            for (int i = 0; i < inboxJson.size(); i++) {
+                String json = inboxJson.get(i);
+                String address = JsonHelper.getJsonString(json, ADDRESS_KEY);
+                String username = userNames.get(i);
 
-            inboxUrls.add(GRAB_URI + username + ADDRESS_PARAM + address + TIME_PARAM + TimeUtil.now());
+                inboxUrls.add(GRAB_URI + username + ADDRESS_PARAM + address + TIME_PARAM + TimeUtil.now());
+            }
+            TaskProgressListener<List<String>, Integer> listener;
+            final URLReaderTask inboxesRead = new URLReaderTask();
+
+            listener = new TaskProgressListener<List<String>, Integer>() {
+                @Override
+                public void onPostExecute(List<String> strings) {
+                }
+
+                @Override
+                public void onProgressUpdate(Integer... values) {
+                    List<String> mailboxes = inboxesRead.getStrings();
+                    String mailboxJson = mailboxes.get(mailboxes.size() - 1);
+                    collectEmailSummary(mailboxJson);
+                    emailMessageAdapter.notifyDataSetChanged();
+                }
+            };
+
+            inboxesRead.setListener(listener);
+            inboxesRead.execute(inboxUrls.toArray(new String[inboxUrls.size()]));
         }
-        TaskProgressListener<List<String>, Integer> listener;
-        final URLReaderTask inboxesRead = new URLReaderTask();
 
-        listener = new TaskProgressListener<List<String>, Integer>() {
-            @Override
-            public void onPostExecute(List<String> strings) {
-                setProgress("done.");
-            }
+        private void collectEmailSummary(String json) {
+            JSONArray jsonArray = JsonHelper.getJsonArray(json, MAILDIR_KEY);
 
-            /**
-             * @param values
-             */
-            @Override
-            public void onProgressUpdate(Integer... values) {
-                setProgress("reading inbox " + usernames.get(values[0]));
-                List<String> mailboxes = inboxesRead.getStrings();
-                String mailboxJson = mailboxes.get(mailboxes.size() - 1);
-                collectEmailSummary(mailboxJson, values[0]);
-                adapters.get(values[0]).notifyDataSetChanged();
-            }
-        };
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject o = jsonArray.optJSONObject(i);
+                if (o.length() != 0) {
+                    Map<String, String> email = new HashMap<String, String>();
+                    if (!o.has(FROMFULL_KEY)) continue;
 
-        inboxesRead.setListener(listener);
-        inboxesRead.execute(inboxUrls.toArray(new String[inboxUrls.size()]));
-    }
+                    collectStringData(o, email, FROMFULL_KEY);
+                    collectStringData(o, email, TO_KEY);
+                    collectStringData(o, email, SUBJECT_KEY);
+                    collectStringData(o, email, SNIPPET_KEY);
+                    collectStringData(o, email, FROM_KEY);
+                    collectStringData(o, email, ID_KEY);
 
-    private void collectEmailSummary(String json, int messageIdx) {
-        JSONArray jsonArray = JsonHelper.getJsonArray(json, MAILDIR_KEY);
+                    collectBooleanData(o, email, BEEN_READ_KEY);
 
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject o = jsonArray.optJSONObject(i);
-            if (o.length() != 0) {
-                Map<String, String> email = new HashMap<String, String>();
-                if (!o.has(FROMFULL_KEY)) continue;
+                    collectLongData(o, email, SECONDS_AGO_KEY);
+                    collectLongData(o, email, TIME_KEY);
 
-                collectStringData(o, email, FROMFULL_KEY);
-                collectStringData(o, email, TO_KEY);
-                collectStringData(o, email, SUBJECT_KEY);
-                collectStringData(o, email, SNIPPET_KEY);
-                collectStringData(o, email, FROM_KEY);
-                collectStringData(o, email, ID_KEY);
-
-                collectBooleanData(o, email, BEEN_READ_KEY);
-
-                collectLongData(o, email, SECONDS_AGO_KEY);
-                collectLongData(o, email, TIME_KEY);
-
-                messages.get(messageIdx).add(email);
+                    emailList.add(email);
+                }
             }
         }
-    }
 
-    private void collectStringData(JSONObject o, Map<String, String> email, String key) {
-        String from = JsonHelper.getJsonString(o, key);
-        email.put(key, from);
-    }
+        private void collectStringData(JSONObject o, Map<String, String> email, String key) {
+            String from = JsonHelper.getJsonString(o, key);
+            email.put(key, from);
+        }
 
-    private void collectBooleanData(JSONObject o, Map<String, String> email, String key) {
-        Boolean from = JsonHelper.getJsonBoolean(o, key);
-        email.put(key, from.toString());
-    }
+        private void collectBooleanData(JSONObject o, Map<String, String> email, String key) {
+            Boolean from = JsonHelper.getJsonBoolean(o, key);
+            email.put(key, from.toString());
+        }
 
-    private void collectLongData(JSONObject o, Map<String, String> email, String key) {
-        Long from = JsonHelper.getJsonLong(o, key);
-        email.put(key, from.toString());
-    }
+        private void collectLongData(JSONObject o, Map<String, String> email, String key) {
+            Long from = JsonHelper.getJsonLong(o, key);
+            email.put(key, from.toString());
+        }
 
-    private void setProgress(String text) {
-        TextView view = (TextView) findViewById(R.id.progress);
-        view.setText(text);
+        private void createEmailListView(ListAdapter adapter, ListView emailListView) {
+            emailListView.setAdapter(adapter);
+
+            emailListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
+                    Map<String, String> email = (Map<String, String>) parent.getItemAtPosition(position);
+                    Intent intent = new Intent(view.getContext(), EmailActivity.class);
+                    intent.putExtra("email_subject", email.get(SUBJECT_KEY));
+                    intent.putExtra("email_id", email.get(ID_KEY));
+                    startActivity(intent);
+                }
+            });
+        }
     }
 }
